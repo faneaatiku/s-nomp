@@ -238,9 +238,30 @@ function SetupForPool(logger, poolOptions, setupFinished){
     }
 
     //send t_address balance to z_address
-    function sendTToZ (callback, tBalance) {
+    function sendTToZ(callback, tBalance) {
         if (callback === true)
             return;
+
+        // do not allow more than a single z_sendmany operation at a time
+        if (opidCount > 0) {
+            logger.warning(logSystem, logComponent, 'sendTToZ is waiting, too many z_sendmany operations already in progress.');
+            return;
+        }
+
+        var shieldingMethod = (processingConfig.shieldingMethod || 'z_sendmany');
+
+        switch (shieldingMethod) {
+            case 'z_shieldcoinbase':
+                zShieldCoinbase(callback);
+                break;
+            case 'z_sendmany':
+            default:
+                zSendMany(callback, tBalance);
+        }
+    }
+
+    //send t_address balance to z_address
+    function zSendMany(callback, tBalance) {
         if (tBalance === NaN) {
             logger.error(logSystem, logComponent, 'tBalance === NaN for sendTToZ');
             return;
@@ -248,12 +269,32 @@ function SetupForPool(logger, poolOptions, setupFinished){
         if ((tBalance - 10000) <= 0)
             return;
 
-        // do not allow more than a single z_sendmany operation at a time
-        if (opidCount > 0) {
-            logger.warning(logSystem, logComponent, 'z_shieldcoinbase is waiting, too many daemon operations already in progress.');
-            return;
-        }
+        var amount = satoshisToCoins(tBalance - 10000);
+        var params = [poolOptions.address, [{ 'address': poolOptions.zAddress, 'amount': amount }]];
+        daemon.cmd('z_sendmany', params,
+            function (result) {
+                //Check if payments failed because wallet doesn't have enough coins to pay for tx fees
+                if (!result || result.error || result[0].error || !result[0].response) {
+                    logger.error(logSystem, logComponent, 'Error trying to shield balance ' + amount + ' ' + JSON.stringify(result[0].error));
+                    callback = function () { };
+                    callback(true);
+                }
+                else {
+                    var opid = (result.response || result[0].response);
+                    opidCount++;
+                    opids.push(opid);
+                    logger.special(logSystem, logComponent, 'Shield balance ' + amount + ' ' + opid);
+                    callback = function () { };
+                    callback(null);
+                }
+            }
+        );
+    }
 
+    //send t_address balance to z_address
+    function zShieldCoinbase (callback) {
+        if (callback === true)
+            return;
         var shieldingUTXOs = (processingConfig.shieldingUTXOs || 50);
         var params = [poolOptions.address, poolOptions.zAddress, fee, shieldingUTXOs];
         daemon.cmd('z_shieldcoinbase', params,

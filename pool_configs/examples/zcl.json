@@ -37,6 +37,8 @@
         "minimumPayment": 0.1,
         "shieldingUTXOs": 50,
         "_comment_shieldingUTXOs": "Total UTXO(mined blocks) to shield at once. 50 is the default of the rpc method z_shieldcoinbase.",
+        "shieldingMethod": "z_shieldcoinbase",
+        "_comment_shieldingMethod": "The daemon RPC method to use for shielding coinbase. Available methods: 'z_sendmany' and z_shieldcoinbase'. Any other value will default to z_sendmany.",
         "maxBlocksPerPayment": 3,
         "daemon": {
             "host": "127.0.0.1",
