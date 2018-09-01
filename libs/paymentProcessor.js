@@ -294,9 +294,11 @@ function SetupForPool(logger, poolOptions, setupFinished){
         }
 
         var amount = satoshisToCoins(zBalance - 10000);
-        // unshield no more than 100 ZEC at a time
-        if (amount > 100.0)
-            amount = 100.0;
+        // parse float and ensure 2 decimals
+        var maxUnshieldAmount = parsefloat(processingConfig.maxUnshieldAmount).toFixed(2);
+        //if maxUnshieldAmount is greater than 0 make sure it's not unshielding more
+        if (maxUnshieldAmount > 0 && maxUnshieldAmount < amount)
+            amount = maxUnshieldAmount;
 
         var params = [poolOptions.zAddress, [{'address': poolOptions.tAddress, 'amount': amount}]];
         daemon.cmd('z_sendmany', params,

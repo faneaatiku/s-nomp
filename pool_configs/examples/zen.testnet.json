@@ -36,6 +36,8 @@
         "paymentInterval": 120,
         "minimumPayment": 0.1,
         "maxBlocksPerPayment": 3,
+        "maxUnshieldAmount": 0,
+        "_comment_maxUnshieldAmount": "Maximum coins amount to unshield at once. 0 means no limit and it's recommended.",
         "daemon": {
             "host": "127.0.0.1",
             "port": 19033,
