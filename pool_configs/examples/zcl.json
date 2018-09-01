@@ -35,6 +35,8 @@
         "_comment_paymentMode": "prop, pplnt",
         "paymentInterval": 120,
         "minimumPayment": 0.1,
+        "shieldingUTXOs": 50,
+        "_comment_shieldingUTXOs": "Total UTXO(mined blocks) to shield at once. 50 is the default of the rpc method z_shieldcoinbase.",
         "maxBlocksPerPayment": 3,
         "daemon": {
             "host": "127.0.0.1",

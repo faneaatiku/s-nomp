@@ -254,21 +254,25 @@ function SetupForPool(logger, poolOptions, setupFinished){
             return;
         }
 
-        var amount = satoshisToCoins(tBalance - 10000);
-        var params = [poolOptions.address, [{'address': poolOptions.zAddress, 'amount': amount}]];
-        daemon.cmd('z_sendmany', params,
+        var shieldingUTXOs = (processingConfig.shieldingUTXOs || 50);
+        var params = [poolOptions.address, poolOptions.zAddress, fee, shieldingUTXOs];
+        daemon.cmd('z_shieldcoinbase', params,
             function (result) {
-                //Check if payments failed because wallet doesn't have enough coins to pay for tx fees
+                //Check if z_shieldcoinbase failed
                 if (!result || result.error || result[0].error || !result[0].response) {
-                    logger.error(logSystem, logComponent, 'Error trying to shield balance '+amount+' '+JSON.stringify(result[0].error));
+                    logger.error(logSystem, logComponent, 'Error trying to shield coinbase: '+JSON.stringify(result[0].error));
                     callback = function (){};
                     callback(true);
                 }
                 else {
-                    var opid = (result.response || result[0].response);                    
+                    var opid = (result.response.opid || result[0].response.opid);
+                    var shieldingValue = (result.response.shieldingValue || result[0].response.shieldingValue);
+                    var shieldingUTXOs = (result.response.shieldingUTXOs || result[0].response.shieldingUTXOs);
+                    var remainingUTXOs = (result.response.remainingUTXOs || result[0].response.remainingUTXOs);
+                    var remainingValue = (result.response.remainingValue || result[0].response.remainingValue);
                     opidCount++;
                     opids.push(opid);
-                    logger.special(logSystem, logComponent, 'Shield balance ' + amount + ' ' + opid);
+                    logger.special(logSystem, logComponent, '[shieldingValue: ' + shieldingValue + '] [shieldingUTXOs: ' + shieldingUTXOs + '] [opid: ' + opid + '] [remainingUTXOs: ' + remainingUTXOs + '] [remainingValue: ' + remainingValue + ']');
                     callback = function (){};
                     callback(null);
                 }
